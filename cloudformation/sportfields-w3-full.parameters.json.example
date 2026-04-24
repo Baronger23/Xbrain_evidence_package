@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "sportfields"
+  },
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "ResourceSuffix",
+    "ParameterValue": "truc-cfn"
+  },
+  {
+    "ParameterKey": "BackendArtifactBucket",
+    "ParameterValue": "sportfields-deployments-dev-truc"
+  },
+  {
+    "ParameterKey": "BackendArtifactKey",
+    "ParameterValue": "backend/releases/latest.tar.gz"
+  },
+  {
+    "ParameterKey": "BackendEnvSsmParameter",
+    "ParameterValue": "/sportfields/dev/truc/backend/env"
+  },
+  {
+    "ParameterKey": "BackendAcmCertificateArn",
+    "ParameterValue": "arn:aws:acm:us-west-2:645314756823:certificate/REPLACE_ME"
+  },
+  {
+    "ParameterKey": "DbPassword",
+    "ParameterValue": "REPLACE_WITH_A_TEMP_PASSWORD_AT_DEPLOY_TIME"
+  },
+  {
+    "ParameterKey": "BedrockGenerationModelId",
+    "ParameterValue": "arn:aws:bedrock:us-west-2:645314756823:inference-profile/us.anthropic.claude-3-haiku-20240307-v1:0"
+  },
+  {
+    "ParameterKey": "BedrockEmbeddingModelArn",
+    "ParameterValue": "arn:aws:bedrock:us-west-2::foundation-model/amazon.titan-embed-text-v2:0"
+  }
+]
