@@ -23,13 +23,32 @@ Nhóm quyết định chọn **RDS PostgreSQL (Relational)** vì cốt lõi củ
 
 **Part B — Cách Engine xử lý hiệu quả:**
 *   **Pattern 1 (Lọc trạng thái):** Engine/Paradigm: RDS PostgreSQL (Relational). Việc truy vấn bảng Payments (~128K records) theo trạng thái rất dễ dẫn đến Full Table Scan. Để tối ưu, đã sử dụng B-Tree Index tên là `payments_status` trên cột status. Index này giúp database xác định ngay lập tức các dòng bị lỗi thanh toán mà không cần quét tuần tự toàn bộ bảng.
-![alt text](<Screenshot/Hình 1_index.png>)
+
+<div align="center">
+
+![alt text](<Screenshot/Hinh 1_index_list.png>) 
+
 ![alt text](<Screenshot/Hình 2_truyvan_sudung_index.png>)
+
+</div>
+
 *   **Pattern 2 (Giao dịch):** Engine/Paradigm: RDS PostgreSQL (Relational). Sử dụng sức mạnh cốt lõi của Relational DB là ACID Transactions (`BEGIN ... COMMIT`). Đảm bảo dữ liệu All-or-nothing: Nếu quá trình thanh toán thất bại, hàm `ROLLBACK` được gọi để hủy việc khóa slot, đảm bảo tính toàn vẹn dữ liệu tài chính mà không cần tự code cơ chế bù trừ phức tạp.
+
+<div align="center">
+
 ![alt text](<Screenshot/Hình 3_thanhtoan_loi.png>)
+
+</div>
+
 *   **Pattern 3 (Lịch sử User):** Engine/Paradigm: RDS PostgreSQL (Relational). Thực hiện JOIN tự nhiên giữa bảng `Users`, `Bookings` và `Payments`.
 *   *(Estimate Cost: RDS db.t3.micro cho môi trường dev/staging có giá khoảng ~$13 - $15/tháng).*
+
+<div align="center">
+
 ![alt text](<Screenshot/Hình 4_join_nhieubang.png>)
+
+</div>
+
 **Part C — "Wrong-paradigm" test:**
 *   **Thử nghiệm sai lầm:** Áp dụng Pattern 3 (Lấy lịch sử kèm chi tiết hoá đơn) lên mô hình Key-Value Paradigm (Amazon DynamoDB).
 *   **Hậu quả:** Trong Key-Value DB không tồn tại lệnh JOIN. Để thỏa mãn Pattern này trên DynamoDB, hệ thống sẽ phải query lấy list Bookings, sau đó lặp (loop) qua từng kết quả và gọi thêm hàng loạt API request sang bảng Payments (Lỗi N+1 Query). Điều này sẽ làm tăng vọt độ trễ (latency) và tiêu tốn một lượng khổng lồ Read Capacity Units (RCU), đẩy hóa đơn AWS hàng tháng lên mức khổng lồ so với việc chỉ tốn vài mili-giây với một câu lệnh JOIN trên RDS.
@@ -70,12 +89,20 @@ aws rds describe-db-instances \
 > **Note:** Tính năng mã hóa dữ liệu tại chỗ (Encryption at rest) đã được bật thông qua key KMS quản lý bởi AWS (aws/rds), được chứng minh qua `"StorageEncrypted": true`. Chúng tôi chọn key do AWS quản lý thay vì tự quản lý key (CMK) bởi vì dự án hiện chưa yêu cầu khắt khe về việc tự đổi khóa (key rotation) thủ công, và chúng tôi ưu tiên cơ chế tự động hóa tiện lợi mà AWS mang lại.
 
 ### 3.3. High Availability (HA) Plan - Multi-AZ
+<div align="center">
+
 ![alt text](Screenshot/Multi_AZ.png)
+
+</div>
 > **Note:** Mô hình triển khai Multi-AZ đã được kích hoạt (chứng minh qua ảnh chụp và `"MultiAZ": true`). Việc thiết lập cấu hình này nhằm đảm bảo tính sẵn sàng cao (High Availability) và tự động chuyển đổi dự phòng (failover) nếu có lỗi hạ tầng, đây là yếu tố sống còn để ngăn hệ thống đặt sân bị sập (downtime).
 
 ### 3.4. Automated Backups Configured
 *(Sử dụng cùng CLI Output ở mục 3.1)*
+<div align="center">
+
 ![alt text](Screenshot/Backup_7days.png)
+
+</div>
 > **Note:** Hệ thống tự động sao lưu đã được cấu hình với thời gian lưu trữ là 7 ngày (chứng minh qua `"BackupRetentionPeriod": 7`). Thiết lập này đảm bảo chúng tôi có khả năng khôi phục dữ liệu ở bất kỳ thời điểm nào trong vòng 7 ngày qua (Point-in-time recovery) nếu chẳng may xảy ra sự cố hỏng dữ liệu hoặc do thao tác nhầm của con người.
 
 ---
@@ -83,45 +110,72 @@ aws rds describe-db-instances \
 ## 4. Working Query Evidence (Bằng chứng truy vấn)
 
 ### 4.1. Indexed Lookup Query (Pattern 1)
-![alt text](<Screenshot/Hình 1_index.png>)
+<div align="center">
+
+![alt text](<Screenshot/Hinh 1_index_list.png>)
+
 ![alt text](<Screenshot/Hình 2_truyvan_sudung_index.png>)
+
+</div>
 > **Note:** Sử dụng `EXPLAIN ANALYZE` chứng minh câu truy vấn tìm kiếm trạng thái 'FAILED' đã tận dụng thành công Index thay vì Full Table Scan.
 
 ### 4.2. JOIN Query qua 2+ bảng (Pattern 3)
+<div align="center">
+
 ![alt text](<Screenshot/Hình 4_join_nhieubang.png>)
+
+</div>
 > **Note:** Chứng minh câu lệnh JOIN 3 bảng (Users, Bookings, Payments) hoạt động mượt mà và trả về dữ liệu thực tế.
 
 *(Optional)* ### 4.3. ACID Transaction (Pattern 2)
+<div align="center">
+
 ![alt text](<Screenshot/Hình 3_thanhtoan_loi.png>)
+
+</div>
 > **Note:** Chứng minh cơ chế Rollback hoạt động để bảo vệ toàn vẹn dữ liệu khi có lỗi xảy ra giữa chừng.
 
 ---
 
-## 5. Lambda + Bedrock Evidence
-### 5.1. CloudWatch Logs (Lambda Trigger)
-![Hình chụp log CloudWatch của Lambda](ĐIỀN-LINK-ẢNH-VÀO-ĐÂY)
-> **Note:** Log chứng minh Lambda đã được trigger thành công với timestamp thực tế.
+## 5.Bedrock Evidence
 
-### 5.2. Bedrock Retrieve/Generate Response
+### 5.1. Bedrock Retrieve/Generate Response
+<div align="center">
+
 ![alt text](Screenshot/Chatbot_Bedrock.png)
+
+</div>
 > **Note:** Kết quả truy xuất từ Knowledge Base qua API/CLI.
 
 ---
 
 ## 6. VPC + Networking Evidence
 ### 6.1. Route Table S3 Gateway Endpoint
+<div align="center">
+
 ![alt text](Screenshot/S3_endpoint.png)
+
 ![alt text](<Screenshot/S3_endpoint (1).png>)
+
+</div>
 > **Note:** VPC Route table có chứa Endpoint trỏ tới S3, giúp các resource trong Private Subnet truy cập S3 mà không cần đi qua Internet Gateway.
 
 ### 6.2. DB Security Group Inbound Rule
+<div align="center">
+
 ![alt text](Screenshot/DB_Security_Group.png)
+
+</div>
 > **Note:** Rule Inbound của Database SG chỉ cho phép kết nối cổng 5432 từ Source là Security Group của Application Tier (Backend EC2).
 
 ---
 
 ## 7. Negative Security Test
+<div align="center">
+
 ![alt text](Screenshot/Negative_connection.png)
+
+</div>
 > **Note:** Chúng tôi đã thử kết nối trực tiếp vào RDS từ máy tính cá nhân (mạng Internet công cộng). Đúng như cấu hình dự kiến, kết nối đã bị lỗi Timeout/Từ chối vì Database đã được bảo vệ chặt chẽ bên trong mạng kín (Private Subnet) và không mở cổng ra ngoài Internet.
 
 ---
@@ -129,23 +183,32 @@ aws rds describe-db-instances \
 ## 8. Failover Test & Downtime Measurement (Bonus Scenario)
 
 ### 8.1. Pre-state (Trước khi Failover)
+<div align="center">
+
 ![alt text](Screenshot/RDS_normal.png)
+
+</div>
 > **Note:** Hệ thống đang hoạt động bình thường (Available), kết nối tới Database thông suốt. Tính năng Multi-AZ đã được bật.
 
 ### 8.2. Action (Kích hoạt Failover)
+<div align="center">
+
 ![alt text](Screenshot/RDS_reboot_failover.png)
-> **Note:** Thực hiện thao tác Reboot DB Instance và chọn "Reboot with failover" để ép Database chuyển đổi từ Primary node sang Standby node.
+
+</div>
+> **Note:** Thực hiện thao tác Reboot DB Instance và chọn "Reboot với failover" để ép Database chuyển đổi từ Primary node sang Standby node.
 
 ### 8.3. Measurement (Đo lường Downtime)
+<div align="center">
+
 ![alt text](Screenshot/Multi_AZ_failover.png)
+
+</div>
 > **Downtime đo được:** `134 giây` (~2 phút 14 giây)
 > *(Ghi nhận thực tế: Mất kết nối từ 15:09:07 đến 15:11:20 do TCP timeout chờ phản hồi trong lúc DB khởi động ở Availability Zone mới. Đến 15:11:21 thì ping thành công trở lại).*
 
-### 8.4. Post-state (Sau khi Failover)
-![Hình chụp RDS Dashboard trở lại trạng thái Available với cùng Endpoint](ĐIỀN-LINK-ẢNH-VÀO-ĐÂY)
-> **Note:** Database đã hoàn tất quá trình chuyển đổi và trở lại trạng thái Available. Tên miền Endpoint không thay đổi, hệ thống tự động kết nối lại thành công.
 
-### 8.5. Reflection (Bài học rút ra)
+### 8.4. Reflection (Bài học rút ra)
 Mô hình Multi-AZ failover giúp hệ thống tự động phục hồi và đảm bảo tính sẵn sàng cao (High Availability) mà không cần con người can thiệp (Endpoint của DB được giữ nguyên, DNS tự động đổi trỏ sang Standby IP). Tuy nhiên, trong quá trình chuyển đổi (switch AZ), ứng dụng vẫn trải qua một khoảng thời gian downtime thực tế là **134 giây** do kết nối TCP cũ bị đứt ngầm khiến client bị treo (hang) chờ timeout. Do đó, đối với ứng dụng chạy trên Production, ở tầng Backend bắt buộc phải lập trình thêm cơ chế **Retry Logic** (có Timeout và Exponential Backoff) để chủ động xử lý các lỗi đứt quãng tạm thời (transient failures) này một cách êm mượt nhất mà không làm crash app.
 
 ### 8.6. Phụ lục: Script đo lường Downtime (`run_test.sh`)
