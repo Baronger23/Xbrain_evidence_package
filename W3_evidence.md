@@ -82,11 +82,11 @@ aws rds describe-db-instances \
     "VpcId": "vpc-04b543490ff0961ae"
 }
 ```
-> **Note:** Chúng tôi đã cấu hình để RDS instance nằm hoàn toàn trong một Private Subnet (được chứng minh bằng `"PubliclyAccessible": false`). Sự lựa chọn này nhằm đảm bảo Database bị cách ly hoàn toàn khỏi Internet công cộng, giúp giảm thiểu tối đa các rủi ro bị tấn công (attack surface).
+> **Note:** Chúng em đã cấu hình để RDS instance nằm hoàn toàn trong một Private Subnet (được chứng minh bằng `"PubliclyAccessible": false`). Sự lựa chọn này nhằm đảm bảo Database bị cách ly hoàn toàn khỏi Internet công cộng, giúp giảm thiểu tối đa các rủi ro bị tấn công (attack surface).
 
 ### 3.2. Encryption at Rest Enabled
 *(Sử dụng cùng CLI Output ở mục 3.1)*
-> **Note:** Tính năng mã hóa dữ liệu tại chỗ (Encryption at rest) đã được bật thông qua key KMS quản lý bởi AWS (aws/rds), được chứng minh qua `"StorageEncrypted": true`. Chúng tôi chọn key do AWS quản lý thay vì tự quản lý key (CMK) bởi vì dự án hiện chưa yêu cầu khắt khe về việc tự đổi khóa (key rotation) thủ công, và chúng tôi ưu tiên cơ chế tự động hóa tiện lợi mà AWS mang lại.
+> **Note:** Tính năng mã hóa dữ liệu tại chỗ (Encryption at rest) đã được bật thông qua key KMS quản lý bởi AWS (aws/rds), được chứng minh qua `"StorageEncrypted": true`. Chúng em chọn key do AWS quản lý thay vì tự quản lý key (CMK) bởi vì dự án hiện chưa yêu cầu khắt khe về việc tự đổi khóa (key rotation) thủ công, và chúng em ưu tiên cơ chế tự động hóa tiện lợi mà AWS mang lại.
 
 ### 3.3. High Availability (HA) Plan - Multi-AZ
 <div align="center">
@@ -103,7 +103,7 @@ aws rds describe-db-instances \
 ![alt text](Screenshot/Backup_7days.png)
 
 </div>
-> **Note:** Hệ thống tự động sao lưu đã được cấu hình với thời gian lưu trữ là 7 ngày (chứng minh qua `"BackupRetentionPeriod": 7`). Thiết lập này đảm bảo chúng tôi có khả năng khôi phục dữ liệu ở bất kỳ thời điểm nào trong vòng 7 ngày qua (Point-in-time recovery) nếu chẳng may xảy ra sự cố hỏng dữ liệu hoặc do thao tác nhầm của con người.
+> **Note:** Hệ thống tự động sao lưu đã được cấu hình với thời gian lưu trữ là 7 ngày (chứng minh qua `"BackupRetentionPeriod": 7`). Thiết lập này đảm bảo chúng em có khả năng khôi phục dữ liệu ở bất kỳ thời điểm nào trong vòng 7 ngày qua (Point-in-time recovery) nếu chẳng may xảy ra sự cố hỏng dữ liệu hoặc do thao tác nhầm của con người.
 
 ---
 
@@ -176,7 +176,7 @@ aws rds describe-db-instances \
 ![alt text](Screenshot/Negative_connection.png)
 
 </div>
-> **Note:** Chúng tôi đã thử kết nối trực tiếp vào RDS từ máy tính cá nhân (mạng Internet công cộng). Đúng như cấu hình dự kiến, kết nối đã bị lỗi Timeout/Từ chối vì Database đã được bảo vệ chặt chẽ bên trong mạng kín (Private Subnet) và không mở cổng ra ngoài Internet.
+> **Note:** Chúng em đã thử kết nối trực tiếp vào RDS từ máy tính cá nhân (mạng Internet công cộng). Đúng như cấu hình dự kiến, kết nối đã bị lỗi Timeout/Từ chối vì Database đã được bảo vệ chặt chẽ bên trong mạng kín (Private Subnet) và không mở cổng ra ngoài Internet.
 
 ---
 
@@ -211,7 +211,7 @@ aws rds describe-db-instances \
 ### 8.4. Reflection (Bài học rút ra)
 Mô hình Multi-AZ failover giúp hệ thống tự động phục hồi và đảm bảo tính sẵn sàng cao (High Availability) mà không cần con người can thiệp (Endpoint của DB được giữ nguyên, DNS tự động đổi trỏ sang Standby IP). Tuy nhiên, trong quá trình chuyển đổi (switch AZ), ứng dụng vẫn trải qua một khoảng thời gian downtime thực tế là **134 giây** do kết nối TCP cũ bị đứt ngầm khiến client bị treo (hang) chờ timeout. Do đó, đối với ứng dụng chạy trên Production, ở tầng Backend bắt buộc phải lập trình thêm cơ chế **Retry Logic** (có Timeout và Exponential Backoff) để chủ động xử lý các lỗi đứt quãng tạm thời (transient failures) này một cách êm mượt nhất mà không làm crash app.
 
-### 8.6. Phụ lục: Script đo lường Downtime (`run_test.sh`)
+### 8.5. Phụ lục: Script đo lường Downtime (`run_test.sh`)
 Để mô phỏng ứng dụng Backend đang chạy và bắt được chính xác số giây downtime, nhóm đã viết một Shell script và thực thi chạy ngầm trên máy chủ Bastion Host. Script này liên tục chọc vào RDS mỗi 1 giây để kiểm tra kết nối:
 ```bash
 while true; do
