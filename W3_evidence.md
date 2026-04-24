@@ -147,6 +147,25 @@ aws rds describe-db-instances \
 </div>
 > **Note:** Kết quả truy xuất từ Knowledge Base qua API/CLI.
 
+
+### 5.2. AWS Lambda Evidence
+
+#### 5.2.1. Lambda: Auto-Sync Data cho AI Chatbot (Bedrock)
+<div align="center">
+
+![alt text](Screenshot/Lambda_datasync.png)
+
+</div>
+> **Note:** Hệ thống sử dụng một hàm AWS Lambda được thiết lập Trigger tự động. Hàm Lambda này đảm nhận nhiệm vụ đồng bộ hóa (sync) tài liệu/dữ liệu mới nhất vào AWS Bedrock Knowledge Base. Điều này đảm bảo Chatbot AI luôn tư vấn dựa trên nguồn dữ liệu được cập nhật liên tục mà không cần con người bấm đồng bộ thủ công.
+
+#### 5.2.2. Lambda: Auto-Resize Image trên S3
+<div align="center">
+
+![alt text](Screenshot/Lambda_resize.png)
+
+</div>
+> **Note:** Hàm AWS Lambda thứ hai được Trigger trực tiếp bởi sự kiện `s3:ObjectCreated:*` trên Amazon S3 bucket. Ngay khi người dùng tải ảnh lên (ví dụ: ảnh đại diện, ảnh sân thể thao), Lambda sẽ tự động được kích hoạt để xử lý nén dung lượng và thay đổi kích thước (resize) ảnh thành các bản thu nhỏ (thumbnail). Kiến trúc Event-driven này giúp tối ưu hóa băng thông tải trang web hoàn toàn tự động phía backend.
+
 ---
 
 ## 6. VPC + Networking Evidence
@@ -225,3 +244,45 @@ while true; do
   sleep 1
 done
 ```
+
+---
+
+## 9. On-Demand Backup & Restore Evidence (Bonus Scenario)
+
+Để chứng minh khả năng phục hồi dữ liệu từ thảm họa (Disaster Recovery), nhóm đã tiến hành kịch bản kiểm thử: **Manual Snapshot & Restore**.
+
+### 9.1. Pre-state (Dữ liệu trước thảm họa)
+<div align="center">
+
+![alt text](Screenshot/Truockhi_delete_user.png)
+
+</div>
+> **Note:** Chụp trạng thái dữ liệu (số lượng Users) đang tồn tại bình thường trên Database trước khi xảy ra sự cố.
+
+### 9.2. Action 1: Tạo Manual Snapshot
+<div align="center">
+
+![alt text](Screenshot/DB_Snapshot.png)
+
+</div>
+> **Note:** Thực hiện chủ động tạo một bản sao lưu thủ công (Manual Snapshot) từ Database đang chạy. Thao tác này đảm bảo dữ liệu ở đúng thời điểm hiện tại được đóng băng và lưu trữ an toàn.
+
+### 9.3. Disaster (Mô phỏng thảm họa mất dữ liệu)
+<div align="center">
+
+![alt text](Screenshot/Sau_khi_delete_user.png)
+
+</div>
+> **Note:** Chạy câu lệnh `DELETE` để mô phỏng tình huống thao tác nhầm làm mất dữ liệu người dùng. Kết quả truy vấn lúc này cho thấy Users đã bị xóa khỏi hệ thống.
+
+### 9.4. Action 2 & Post-state: Phục hồi (Restore) thành công
+<div align="center">
+
+![alt text](Screenshot/RollBack_Snapshot.png)
+</div>
+> **Note:** Khởi tạo một Database Instance hoàn toàn mới từ bản sao lưu thủ công đã tạo ở bước 9.2. Sau khi Database mới khởi tạo xong, kết nối vào Endpoint của Database mới và thực hiện truy vấn lại bảng Users. Kết quả cho thấy dữ liệu đã được khôi phục nguyên vẹn. Kịch bản DR đã thành công.
+
+### 9.5. Reflection (Bài học rút ra)
+Tính năng Manual Snapshot (hoặc Point-in-Time Recovery) là chốt chặn an toàn cuối cùng và vô cùng quan trọng đối với các lỗi do "con người" gây ra (Ví dụ: vô tình chạy nhầm lệnh `DROP TABLE` hoặc `DELETE` sai điều kiện) - những lỗi mà kiến trúc Multi-AZ không thể cứu được (vì thao tác xóa sẽ bị sao chép ngay lập tức sang Standby node). 
+
+Tuy nhiên, phương pháp phục hồi này **không phải là giải pháp tức thời (zero-downtime)**. Việc tạo ra một Database Instance mới từ bản Snapshot đòi hỏi thời gian khởi tạo (provision) khoảng 10 - 20 phút. Hơn nữa, Endpoint kết nối của Database mới sẽ thay đổi, đòi hỏi đội ngũ vận hành (Ops) phải cập nhật lại cấu hình chuỗi kết nối (Database URL / `.env`) ở tầng Application thì hệ thống mới có thể hoạt động lại bình thường. Điều này chứng minh rằng: công cụ sao lưu định kỳ của đám mây rất mạnh mẽ, nhưng việc thiết lập quy trình quản lý rủi ro và phân quyền chặn xóa nhầm từ đầu vẫn là ưu tiên số một.
