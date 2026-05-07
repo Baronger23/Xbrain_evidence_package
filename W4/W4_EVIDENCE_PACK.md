@@ -35,11 +35,6 @@ graph TD
     LLM --> FinalAnswer[Final Response]
     FinalAnswer --> Streamlit
 ```
-
-<div align="center">
-  <img src="Screenshot/0A0_Diagram.png" alt="alt text">
-</div>
-
 ### 📦 Component List
 1.  **`app.py`**: Dashboard quan sát (Observability) hiển thị Chat, Chunks trích dẫn và Reasoning logs.
 2.  **`agent.py`**: "Bộ não" điều phối. Quản lý vòng lặp suy luận (L3) và bộ nhớ hội thoại (L4).
