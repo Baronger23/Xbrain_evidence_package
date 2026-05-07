@@ -71,8 +71,8 @@ graph TD
 *   **Bài học:** AI cần được hướng dẫn cụ thể về tính pháp lý/tuân thủ để đưa ra nhận định chính xác.
 
 ### Quyết định 3: Chuyển từ trả về "Tên file" sang trả về "Text Chunks" chi tiết
-*   **Tại sao:** Lúc đầu chỉ hiện tên file (fail), Trainer sẽ không biết AI đọc gì. Chúng tôi đã sửa để hiện chi tiết từng đoạn văn bản.
-*   **Cải tiến:** `Chúng tôi thử hiện tên file, fail vì không đủ bằng chứng, nên chuyển sang hiện đầy đủ Text Chunks kèm Expander.`
+*   **Tại sao:** Lúc đầu chỉ hiện tên file (fail), Trainer sẽ không biết AI đọc gì. Chúng em đã sửa để hiện chi tiết từng đoạn văn bản.
+*   **Cải tiến:** `Chúng em thử hiện tên file, fail vì không đủ bằng chứng, nên chuyển sang hiện đầy đủ Text Chunks kèm Expander.`
 
 ---
 
