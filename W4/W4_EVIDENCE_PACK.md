@@ -162,8 +162,30 @@ graph TD
 </div>
 ### Bonus A & B: Observability & Reasoning
 *   **Bằng chứng:** Dashboard hiển thị real-time các bước Tool Call, Tool Result và suy luận logic.
-*   **[Bao gồm những hình ảnh trên: Ảnh chụp bảng 'Internal Reasoning Process' với các icon 🛠️ và 📥]**
-### Bonus C: 
+
+<div align="center">
+    <img src="Screenshot/23_BonusB1.png" alt="alt text">
+</div>
+<div align="center">
+    <img src="Screenshot/22_BonusB2.png" alt="alt text">
+</div>
+<div align="center">
+    <img src="Screenshot/21_BonusB3.png" alt="alt text">
+</div>
+
+### Bonus C:
+
+<div align="center">
+    <img src="Screenshot/18_BonusC1.png" alt="alt text">
+</div>
+<div align="center">
+    <img src="Screenshot/19_BonusC2.png" alt="alt text">
+</div>
+<div align="center">
+    <img src="Screenshot/20_BonusC3.png" alt="alt text">
+    
+</div>
+
 ---
 
 ## Section 5 — Reflection
